@@ -5,7 +5,6 @@ pragma solidity ^0.8.9;
 // @title Black Check DAO
 // @author @tom_hirst
 
-import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -41,7 +40,6 @@ contract BlackCheckDAO is ERC721, Ownable {
     error CheckAlreadyDeposited();
     error CheckDepositorNotOwner();
     error CheckNotDeposited();
-    error CheckWithdrawerNotDepositor();
     error WithdrawerNotApprovedOrOwner();
     error DAOTokenNotForThisCheck();
     error BlackCheckNotMinted();
