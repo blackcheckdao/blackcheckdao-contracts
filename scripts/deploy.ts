@@ -1,8 +1,9 @@
 import { ethers } from "hardhat";
+import { constants } from "ethers";
 
 async function main() {
-  const operatorAddress = '';
-  const imageURI = '';
+  const operatorAddress = constants.AddressZero;
+  const imageURI = "";
 
   const BlackCheckDAO = await ethers.getContractFactory("BlackCheckDAO");
   const blackCheckDAO = await BlackCheckDAO.deploy(operatorAddress, imageURI);

@@ -10,6 +10,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
 import "./interfaces/IChecksOriginals.sol";
+import "hardhat/console.sol";
 
 // @TODO https://docs.openzeppelin.com/contracts/2.x/api/token/erc721#IERC721Receiver
 // @TODO https://eips.ethereum.org/EIPS/eip-4906
@@ -17,6 +18,7 @@ import "./interfaces/IChecksOriginals.sol";
 
 contract BlackCheckDAO is ERC721, Ownable {
     address public operatorAddress;
+    string public imageURI;
 
     IChecksOriginals public checksOriginals;
 
@@ -32,8 +34,6 @@ contract BlackCheckDAO is ERC721, Ownable {
     }
 
     mapping(uint256 => DAOToken) public daoTokens;
-
-    string public imageURI;
 
     error EmptyOperatorAddress();
     error EmptyImageURI();
@@ -73,7 +73,6 @@ contract BlackCheckDAO is ERC721, Ownable {
         );
         operatorAddress = _operatorAddress;
         transferOwnership(_operatorAddress);
-
         imageURI = _imageURI;
     }
 
