@@ -6,6 +6,7 @@ pragma solidity ^0.8.9;
 // @author @tom_hirst
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Base64.sol";
@@ -16,11 +17,11 @@ import "hardhat/console.sol";
 // @TODO https://eips.ethereum.org/EIPS/eip-4906
 // @TODO https://eips.ethereum.org/EIPS/eip-2981
 
-contract BlackCheckDAO is ERC721, Ownable {
+contract BlackCheckDAO is ERC721, IERC721Receiver, Ownable {
     address public operatorAddress;
     string public imageURI;
 
-    IChecksOriginals public checksOriginals;
+    IChecksOriginals public checks;
 
     uint256 private _totalSupply;
     uint256 private nextTokenId;
@@ -68,9 +69,7 @@ contract BlackCheckDAO is ERC721, Ownable {
             revert EmptyOperatorAddress();
         }
 
-        checksOriginals = IChecksOriginals(
-            0x036721e5A769Cc48B3189EFbb9ccE4471E8A48B1
-        );
+        checks = IChecksOriginals(0x036721e5A769Cc48B3189EFbb9ccE4471E8A48B1);
         operatorAddress = _operatorAddress;
         transferOwnership(_operatorAddress);
         imageURI = _imageURI;
@@ -80,20 +79,21 @@ contract BlackCheckDAO is ERC721, Ownable {
     // @param _tokenId The ID of the Check to deposit
     function deposit(uint256 _tokenId) public {
         // Ensure that the Check is not already owned by this contract
-        if (checksOriginals.ownerOf(_tokenId) == address(this)) {
+        if (checks.ownerOf(_tokenId) == address(this)) {
             revert CheckAlreadyDeposited();
         }
 
+        // @TODO Is this needed? Already in the Checks contract
         // Ensure that the depositor is the owner of the Check
-        if (msg.sender != checksOriginals.ownerOf(_tokenId)) {
+        if (msg.sender != checks.ownerOf(_tokenId)) {
             revert CheckDepositorNotOwner();
         }
 
         // Transfer check to this contract
-        checksOriginals.safeTransferFrom(msg.sender, address(this), _tokenId);
+        checks.safeTransferFrom(msg.sender, address(this), _tokenId);
 
         // Get Check data
-        IChecks.Check memory check = checksOriginals.getCheck(_tokenId);
+        IChecks.Check memory check = checks.getCheck(_tokenId);
 
         // Set the tokenId for the DAO token to be minted
         uint256 tokenId = ++nextTokenId;
@@ -153,7 +153,7 @@ contract BlackCheckDAO is ERC721, Ownable {
         totalChecks -= daoTokens[_daoTokenId].checks;
 
         // Transfer Check to withdrawer
-        checksOriginals.safeTransferFrom(
+        checks.safeTransferFrom(
             address(this),
             msg.sender,
             daoTokens[_daoTokenId].checkId
@@ -186,7 +186,7 @@ contract BlackCheckDAO is ERC721, Ownable {
         bool _swap
     ) public onlyOwner {
         // Call the Checks Originals contract to composite the Checks
-        checksOriginals.composite(_tokenId, _burnId, _swap);
+        checks.composite(_tokenId, _burnId, _swap);
 
         // Emit event
         emit Composite(_tokenId, _burnId);
@@ -201,7 +201,7 @@ contract BlackCheckDAO is ERC721, Ownable {
         uint256[] calldata _tokenIds,
         uint256[] calldata _burnIds
     ) public onlyOwner {
-        checksOriginals.compositeMany(_tokenIds, _burnIds);
+        checks.compositeMany(_tokenIds, _burnIds);
     }
 
     // @notice Form the final Black Check from deposited Checks
@@ -210,7 +210,7 @@ contract BlackCheckDAO is ERC721, Ownable {
     // @dev The deposited Check tokenId at _tokenIds[0] is retained by the Black Check
     function infinity(uint256[] calldata _tokenIds) public onlyOwner {
         // Call the Checks Originals contract to form the Black Check
-        checksOriginals.infinity(_tokenIds);
+        checks.infinity(_tokenIds);
 
         // Adjust contract state
         blackCheckMinted = true;
@@ -227,7 +227,7 @@ contract BlackCheckDAO is ERC721, Ownable {
             revert BlackCheckNotMinted();
         }
 
-        checksOriginals.safeTransferFrom(address(this), msg.sender, _tokenId);
+        checks.safeTransferFrom(address(this), msg.sender, _tokenId);
     }
 
     // @notice Returns the total number of DAO tokens
@@ -294,5 +294,15 @@ contract BlackCheckDAO is ERC721, Ownable {
     // @dev 5120 (total checks needed to create a single check) * 64 = 327680
     function getCanInfinity() public view returns (bool) {
         return totalChecks >= 327680;
+    }
+
+    // @notice Tell Checks that this contract can receive tokens
+    function onERC721Received(
+        address,
+        address,
+        uint256,
+        bytes calldata
+    ) external pure override returns (bytes4) {
+        return this.onERC721Received.selector;
     }
 }

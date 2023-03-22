@@ -9,6 +9,7 @@
     "clean": "hardhat compile",
     "compile": "hardhat compile",
     "test": "hardhat test",
+    "test:fork": "hardhat test",
     "prettier:check": "prettier --check '{contracts,test,scripts}/**/*.{js,jsx,ts,tsx,sol}'",
     "prettier:write": "prettier --write '{contracts,test,scripts}/**/*.{js,jsx,ts,tsx,sol}'"
   },
